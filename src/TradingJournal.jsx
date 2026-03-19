@@ -33,6 +33,20 @@ const SK = {
 // Updated: Mar 19 2026
 const PDF_SESSIONS = [
   {
+    id: "pdf-mar19", date: "2026-03-19", label: "Mar 19", symbol: "MESM6",
+    netPnl: 395.25, grossPnl: 401.25, fees: 6, trades: 2, wins: 2, losses: 0,
+    winRate: 100, avgWin: 200.62, avgLoss: 0, expectancy: 200.62,
+    maxRunup: 398.25, maxDrawdown: 3.00, avgHold: "53:39", contracts: 12,
+    tradeLog: [
+      { id: "t1", time: "09:21:15", direction: "L", entry: 6638.25, exit: 6654.75, sl: "", tp: "", duration: "1:45:31", pnl: 247.50, rr: "", setup: "Liquidity Sweep", confluence: "Trend", note: "⭐ Largest winner · 16.5pt move" },
+      { id: "t2", time: "11:07:16", direction: "L", entry: 6645.50, exit: 6655.75, sl: "", tp: "", duration: "1:48", pnl: 153.75, rr: "", setup: "Trend Continuation", confluence: "Trend", note: "Quick continuation" },
+    ],
+    notes: [
+      { id: "n1", color: "#00d48a", title: "2/2 · 100% · +$395.25 · Previous Session Sweep", content: "Followed the plan — waited for previous session sweep, executed cleanly. 2 trades, 2 winners. Symbol rolled to MESM6 (June contract)." },
+      { id: "n2", color: "#f5a623", title: "Contract Roll — MESH6 → MESM6", content: "March contract expired, now trading June contract MESM6. Same strategy, same levels." },
+    ]
+  },
+  {
     id: "pdf-mar13", date: "2026-03-13", label: "Mar 13", symbol: "MESH6",
     netPnl: 509.00, grossPnl: 525.00, fees: 16, trades: 6, wins: 3, losses: 3,
     winRate: 50, avgWin: 305.00, avgLoss: 130.00, expectancy: 87.50,
@@ -830,6 +844,148 @@ function FrameworkTab({ fw, setFw }) {
   );
 }
 
+
+// ─── ANALYTICS TAB ────────────────────────────────────────────────────────────
+function AnalyticsTab({ sessions }) {
+  const allTrades = sessions.flatMap(s => (s.tradeLog || []).map(t => ({ ...t, session: s.label })));
+
+  // P&L by hour of day
+  const byHour = {};
+  allTrades.forEach(t => {
+    if (!t.time) return;
+    const hour = parseInt(t.time.split(":")[0]);
+    if (isNaN(hour)) return;
+    if (!byHour[hour]) byHour[hour] = 0;
+    byHour[hour] += (+t.pnl || 0);
+  });
+  const hours = Object.keys(byHour).map(Number).sort((a, b) => a - b);
+  const hourMax = Math.max(...Object.values(byHour).map(Math.abs), 1);
+
+  // P&L distribution buckets
+  const pnls = allTrades.map(t => +t.pnl || 0).filter(p => p !== 0);
+  const bucketSize = 50;
+  const minPnl = Math.floor(Math.min(...pnls, 0) / bucketSize) * bucketSize;
+  const maxPnl = Math.ceil(Math.max(...pnls, 0) / bucketSize) * bucketSize;
+  const buckets = {};
+  for (let i = minPnl; i <= maxPnl; i += bucketSize) buckets[i] = 0;
+  pnls.forEach(p => {
+    const b = Math.floor(p / bucketSize) * bucketSize;
+    buckets[b] = (buckets[b] || 0) + 1;
+  });
+  const bucketKeys = Object.keys(buckets).map(Number).sort((a, b) => a - b);
+  const bucketMax = Math.max(...Object.values(buckets), 1);
+
+  // Session P&L bar chart
+  const sessMax = Math.max(...sessions.map(s => Math.abs(+s.netPnl || 0)), 1);
+
+  const BAR_H = 160;
+  const barColor = (v) => v >= 0 ? C.G : C.R;
+
+  if (allTrades.length === 0) return <EmptyState msg="Add trades to see analytics." />;
+
+  return (
+    <div>
+      {/* Session P&L */}
+      <div style={{ fontSize: 10, letterSpacing: ".14em", color: C.muted, textTransform: "uppercase", fontFamily: "'Syne',sans-serif", fontWeight: 700, marginBottom: 14 }}>Session P&L</div>
+      <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 2, padding: "20px 20px 10px", marginBottom: 28 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: BAR_H, overflowX: "auto" }}>
+          {[...sessions].reverse().map((s, i) => {
+            const v = +s.netPnl || 0;
+            const h = Math.max(2, Math.abs(v / sessMax) * (BAR_H - 20));
+            return (
+              <div key={s.id} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4, minWidth: 50, flex: 1 }}>
+                {v >= 0
+                  ? <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", height: BAR_H - 20 }}>
+                    <div style={{ width: "100%", height: h, background: C.G, borderRadius: "2px 2px 0 0", position: "relative", minWidth: 40 }}>
+                      <div style={{ position: "absolute", top: -18, left: "50%", transform: "translateX(-50%)", fontSize: 9, color: C.G, whiteSpace: "nowrap" }}>${v.toFixed(0)}</div>
+                    </div>
+                  </div>
+                  : <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", height: BAR_H - 20, marginTop: "auto" }}>
+                    <div style={{ width: "100%", height: h, background: C.R, borderRadius: "0 0 2px 2px", position: "relative", minWidth: 40 }}>
+                      <div style={{ position: "absolute", bottom: -18, left: "50%", transform: "translateX(-50%)", fontSize: 9, color: C.R, whiteSpace: "nowrap" }}>${v.toFixed(0)}</div>
+                    </div>
+                  </div>
+                }
+                <div style={{ fontSize: 9, color: C.muted, marginTop: 4, whiteSpace: "nowrap" }}>{s.label}</div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20, marginBottom: 28 }}>
+        {/* P&L by Time of Day */}
+        <div>
+          <div style={{ fontSize: 10, letterSpacing: ".14em", color: C.muted, textTransform: "uppercase", fontFamily: "'Syne',sans-serif", fontWeight: 700, marginBottom: 14 }}>P&L Per Time of Day</div>
+          <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 2, padding: "20px 16px 10px" }}>
+            {hours.length === 0
+              ? <div style={{ color: C.muted, fontSize: 11, textAlign: "center", padding: 20 }}>No time data</div>
+              : <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: BAR_H, overflowX: "auto" }}>
+                {hours.map(h => {
+                  const v = byHour[h];
+                  const barH = Math.max(2, Math.abs(v / hourMax) * (BAR_H - 24));
+                  return (
+                    <div key={h} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flex: 1, minWidth: 32 }}>
+                      {v >= 0
+                        ? <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", height: BAR_H - 24 }}>
+                          <div style={{ width: "100%", height: barH, background: C.G, borderRadius: "2px 2px 0 0", position: "relative" }}>
+                            <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", fontSize: 8, color: C.G, whiteSpace: "nowrap" }}>${v.toFixed(0)}</div>
+                          </div>
+                        </div>
+                        : <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-start", height: BAR_H - 24, marginTop: "auto" }}>
+                          <div style={{ width: "100%", height: barH, background: C.R, borderRadius: "0 0 2px 2px", position: "relative" }}>
+                            <div style={{ position: "absolute", bottom: -14, left: "50%", transform: "translateX(-50%)", fontSize: 8, color: C.R, whiteSpace: "nowrap" }}>${v.toFixed(0)}</div>
+                          </div>
+                        </div>
+                      }
+                      <div style={{ fontSize: 8, color: C.muted, marginTop: 4 }}>{h}:00</div>
+                    </div>
+                  );
+                })}
+              </div>
+            }
+          </div>
+        </div>
+
+        {/* P&L Distribution */}
+        <div>
+          <div style={{ fontSize: 10, letterSpacing: ".14em", color: C.muted, textTransform: "uppercase", fontFamily: "'Syne',sans-serif", fontWeight: 700, marginBottom: 14 }}>P&L Distribution</div>
+          <div style={{ background: C.surf, border: `1px solid ${C.bord}`, borderRadius: 2, padding: "20px 16px 10px" }}>
+            {bucketKeys.length === 0
+              ? <div style={{ color: C.muted, fontSize: 11, textAlign: "center", padding: 20 }}>No trade data</div>
+              : <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: BAR_H, overflowX: "auto" }}>
+                {bucketKeys.map(b => {
+                  const count = buckets[b];
+                  const barH = Math.max(count > 0 ? 4 : 0, (count / bucketMax) * (BAR_H - 24));
+                  return (
+                    <div key={b} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2, flex: 1, minWidth: 28 }}>
+                      <div style={{ display: "flex", flexDirection: "column", justifyContent: "flex-end", height: BAR_H - 24 }}>
+                        <div style={{ width: "100%", height: barH, background: b >= 0 ? C.G : C.R, borderRadius: "2px 2px 0 0", position: "relative" }}>
+                          {count > 0 && <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)", fontSize: 8, color: b >= 0 ? C.G : C.R }}>{count}</div>}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 7, color: C.muted, marginTop: 4, whiteSpace: "nowrap" }}>{b >= 0 ? "+" : ""}{b}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      {/* Stats summary */}
+      <div style={{ fontSize: 10, letterSpacing: ".14em", color: C.muted, textTransform: "uppercase", fontFamily: "'Syne',sans-serif", fontWeight: 700, marginBottom: 14 }}>Trade Stats Across All Sessions</div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 1, background: C.bord, border: `1px solid ${C.bord}`, borderRadius: 2, overflow: "hidden" }}>
+        <Stat label="Total Trades" value={allTrades.length} color={C.B} sub="all sessions" />
+        <Stat label="Best Trade" value={allTrades.length > 0 ? fmt(Math.max(...allTrades.map(t => +t.pnl || 0))) : "—"} color={C.G} sub="single trade" />
+        <Stat label="Worst Trade" value={allTrades.length > 0 ? fmt(Math.min(...allTrades.map(t => +t.pnl || 0))) : "—"} color={C.R} sub="single trade" />
+        <Stat label="Total Gross" value={fmt(allTrades.reduce((s, t) => s + (+t.pnl || 0), 0))} color={C.A} sub="before fees" />
+      </div>
+    </div>
+  );
+}
+
 // ─── APP ──────────────────────────────────────────────────────────────────────
 export default function TradingJournal() {
   const { sessions, addSession, updateSession, deleteSession, updateTrades, updateNotes } = useSessionData();
@@ -867,8 +1023,8 @@ export default function TradingJournal() {
           </div>
         </div>
         <div style={{ display: "flex" }}>
-          {["overview", "trades", "notes", "weekly", "framework"].map(t => (
-            <TabBtn key={t} label={t === "weekly" ? "Weekly Review" : t.charAt(0).toUpperCase() + t.slice(1)} active={tab === t} onClick={() => setTab(t)} />
+          {["overview", "trades", "notes", "weekly", "analytics", "framework"].map(t => (
+            <TabBtn key={t} label={t === "weekly" ? "Weekly Review" : t === "analytics" ? "Analytics" : t.charAt(0).toUpperCase() + t.slice(1)} active={tab === t} onClick={() => setTab(t)} />
           ))}
         </div>
       </div>
@@ -879,6 +1035,7 @@ export default function TradingJournal() {
         {tab === "trades" && <TradesTab sessions={sessions} updateTrades={updateTrades} />}
         {tab === "notes" && <NotesTab sessions={sessions} updateNotes={updateNotes} />}
         {tab === "weekly" && <WeeklyTab weeks={weeks} setWeeks={setWeeks} />}
+        {tab === "analytics" && <AnalyticsTab sessions={sessions} />}
         {tab === "framework" && <FrameworkTab fw={fw} setFw={setFw} />}
       </div>
 
