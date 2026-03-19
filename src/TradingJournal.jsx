@@ -38,12 +38,6 @@ const PDF_SESSIONS = [
     winRate: 50, avgWin: 305.00, avgLoss: 130.00, expectancy: 87.50,
     maxRunup: 707.00, maxDrawdown: 208.00, avgHold: "2:22:13", contracts: 40,
     tradeLog: [
-      { id: "t1", time: "00:38:30", direction: "L", entry: 6689.50, exit: 6698.50, sl: "", tp: "", duration: "4:20:43", pnl: 180.00, rr: "", setup: "Order Block", confluence: "London Sweep", note: "Overnight long" },
-      { id: "t2", time: "00:38:30", direction: "L", entry: 6689.50, exit: 6695.00, sl: "", tp: "", duration: "4:22:52", pnl: 110.00, rr: "", setup: "Order Block", confluence: "London Sweep", note: "Overnight long · longest hold" },
-      { id: "t3", time: "08:28:08", direction: "S", entry: 6714.50, exit: 6704.50, sl: "", tp: "", duration: "17:02", pnl: -50.00, rr: "", setup: "Reversal", confluence: "", note: "Pre-market short · 1 contract" },
-      { id: "t4", time: "08:28:08", direction: "S", entry: 6714.50, exit: 6704.50, sl: "", tp: "", duration: "17:03", pnl: -150.00, rr: "", setup: "Reversal", confluence: "", note: "Pre-market short · 3 contracts" },
-      { id: "t5", time: "08:47:14", direction: "L", entry: 6685.50, exit: 6716.75, sl: "", tp: "", duration: "1:58:37", pnl: 625.00, rr: "", setup: "Order Block", confluence: "Trend", note: "⭐ Order block bounce after sweep · 31.25pt move 🎄" },
-      { id: "t6", time: "13:47:27", direction: "S", entry: 6642.00, exit: 6632.50, sl: "", tp: "", duration: "2:56:59", pnl: -190.00, rr: "", setup: "Reversal", confluence: "", note: "Afternoon short · largest loss" },
     ],
     notes: [
       { id: "n1", color: C.G, title: "3/6 · 50% · +$509 · Rules Day — Breakthrough", content: "Followed the rules. Focused on previous session sweeps. +$625 off an order block bounce after a sweep. 31.25 points on 4 contracts. First time clearly identifying the setup — Christmas gift." },
