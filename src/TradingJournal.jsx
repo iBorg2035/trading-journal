@@ -252,7 +252,7 @@ const DEFAULT_FW = {
     { id: "l4", color: C.R, name: "Multi-Day Levels", desc: "11+ day old untouched levels. More stops = sharper reversal." },
   ],
 };
-const DEFAULT_SETTINGS = { goal: 2450, balance: 1257, symbol: "MESH6" };
+const DEFAULT_SETTINGS = { goal: 2450, balance: 0, symbol: "MESH6" };
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
 const uid = () => Math.random().toString(36).slice(2, 9);
