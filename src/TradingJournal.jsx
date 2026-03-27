@@ -172,7 +172,7 @@ function useLS(key, def) {
 
   // Sync FROM Supabase on mount — overwrite local cache if cloud has data
   useEffect(() => {
-    supabase.from("journal_data").select("value").eq("key", key).single()
+    supabase.from("journal_data").select("value").eq("key", key).maybeSingle()
       .then(({ data, error }) => {
         if (data && !error && !dirty.current) {
           setVal(data.value);
