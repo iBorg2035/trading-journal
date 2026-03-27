@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "./supabase";
 
 // ─── THEME ────────────────────────────────────────────────────────────────────
 const C = {
@@ -162,15 +163,37 @@ const pc = (v) => (+v || 0) >= 0 ? C.G : C.R;
 const clamp = (v, mn, mx) => Math.min(mx, Math.max(mn, v));
 
 function useLS(key, def) {
+  // Load instantly from localStorage cache (no blank screen)
   const [val, setVal] = useState(() => {
     try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : def; }
     catch { return def; }
   });
-  const set = (v) => {
-    const next = typeof v === "function" ? v(val) : v;
-    setVal(next);
-    try { localStorage.setItem(key, JSON.stringify(next)); } catch { }
-  };
+  const dirty = useRef(false);
+
+  // Sync FROM Supabase on mount — overwrite local cache if cloud has data
+  useEffect(() => {
+    supabase.from("journal_data").select("value").eq("key", key).single()
+      .then(({ data, error }) => {
+        if (data && !error && !dirty.current) {
+          setVal(data.value);
+          try { localStorage.setItem(key, JSON.stringify(data.value)); } catch {}
+        }
+      });
+  }, [key]);
+
+  // Write to both localStorage (instant) and Supabase (persistent)
+  const set = useCallback((v) => {
+    setVal(prev => {
+      const next = typeof v === "function" ? v(prev) : v;
+      dirty.current = true;
+      try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
+      supabase.from("journal_data")
+        .upsert({ key, value: next }, { onConflict: "key" })
+        .then(({ error }) => { if (error) console.warn("Supabase save error:", error); });
+      return next;
+    });
+  }, [key]);
+
   return [val, set];
 }
 
